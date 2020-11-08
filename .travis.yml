@@ -1,0 +1,26 @@
+language: generic
+sudo: required
+services:
+    - docker
+
+before_install:
+    - docker build -t react-test -f ./client/Dockerfile.dev ./client
+
+script:
+    - docker run react-test npm test a -- --watchAll=false --coverage
+
+after_success:
+    # Build images
+    - docker build -t mindzoom/multi-client ./client
+    - docker build -t mindzoom/multi-api ./api
+    - docker build -t mindzoom/multi-worker ./worker
+    - docker build -t mindzoom/multi-nginx ./nginx
+
+    # Log in to the docker CLI
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+
+    # Push images to the Docker Hub
+    - docker push mindzoom/multi-client
+    - docker push mindzoom/multi-api
+    - docker push mindzoom/multi-worker
+    - docker push mindzoom/multi-nginx
